@@ -23,9 +23,12 @@ import android.widget.TextView
 
 import java.util.ArrayList
 import android.Manifest.permission.READ_CONTACTS
+import android.widget.Toast
+import io.reactivex.android.schedulers.AndroidSchedulers
 import karrel.com.mvvmsample.R
 import karrel.com.mvvmsample.extensions.AutoClearedDisposable
 import karrel.com.mvvmsample.extensions.plusAssign
+import karrel.com.mvvmsample.viewmodel.LoginViewModel
 import karrel.com.mvvmsample.viewmodel.LoginViewModelImpl
 import karrel.com.mvvmsample.viewmodel.ProgressViewModel
 import karrel.com.mvvmsample.viewmodel.ProgressViewModelImpl
@@ -33,8 +36,8 @@ import karrel.com.mvvmsample.viewmodel.ProgressViewModelImpl
 import kotlinx.android.synthetic.main.activity_login.*
 
 class LoginActivity : AppCompatActivity() {
-    private val loginViewModel = LoginViewModelImpl
-    private val progressViewModel = ProgressViewModelImpl
+    private val loginViewModel: LoginViewModel = LoginViewModelImpl
+    private val progressViewModel: ProgressViewModel = ProgressViewModelImpl
 
     private val disposables = AutoClearedDisposable(this)
 
@@ -50,7 +53,9 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun setupProgressEvent() {
-        progressViewModel.output.progressObservable().subscribe { showProgress(it) }
+        progressViewModel.output.progressObservable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { showProgress(it) }
     }
 
     private fun setupLoginVieModelEvents() {
@@ -71,6 +76,10 @@ class LoginActivity : AppCompatActivity() {
             }
         }
         disposables += loginViewModel.output.emailFocusObservable().subscribe { email.requestFocus() }
+
+        disposables += loginViewModel.output.loginObservable().subscribe {
+            Toast.makeText(baseContext, "로그인 성공", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun setupButtonEvents() {
@@ -93,26 +102,9 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun showProgress(show: Boolean) {
-        val shortAnimTime = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
+        println("showProgress($show)")
 
-        login_form.visibility = if (show) View.GONE else View.VISIBLE
-        login_form.animate()
-                .setDuration(shortAnimTime)
-                .alpha((if (show) 0 else 1).toFloat())
-                .setListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator) {
-                        login_form.visibility = if (show) View.GONE else View.VISIBLE
-                    }
-                })
-
-        login_progress.visibility = if (show) View.VISIBLE else View.GONE
-        login_progress.animate()
-                .setDuration(shortAnimTime)
-                .alpha((if (show) 1 else 0).toFloat())
-                .setListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator) {
-                        login_progress.visibility = if (show) View.VISIBLE else View.GONE
-                    }
-                })
+        email_login_form.visibility = if (show) View.GONE else View.VISIBLE
+        login_progress.visibility = if (show) View.GONE else View.INVISIBLE
     }
 }

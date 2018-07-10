@@ -11,7 +11,7 @@ class LoginDataManager {
 
     fun login(id: String, password: String): Maybe<Boolean> {
         return create<Boolean> { emitter ->
-            Thread.sleep(1000)
+            Thread.sleep(2000)
             emitter.onSuccess(true)
         }
     }

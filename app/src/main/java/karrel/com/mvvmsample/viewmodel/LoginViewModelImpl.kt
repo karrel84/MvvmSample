@@ -2,6 +2,7 @@ package karrel.com.mvvmsample.viewmodel
 
 import android.content.Context
 import android.text.TextUtils
+import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 import karrel.com.mvvmsample.R
 import karrel.com.mvvmsample.data.LoginDataManager
@@ -9,12 +10,16 @@ import karrel.com.mvvmsample.data.LoginDataManager
 /**
  * Created by Rell on 2018. 7. 5..
  */
-object LoginViewModelImpl {
+object LoginViewModelImpl : LoginViewModel {
+    override val input: LoginViewModel.Input = Input()
+    override val output: LoginViewModel.Output = Output()
+    val progressViewModel: ProgressViewModel = ProgressViewModelImpl
 
-    val progressViewModel = ProgressViewModelImpl
-
-    val input: LoginViewModel.Input = Input()
-    val output: LoginViewModel.Output = Output()
+    private val emailErrorObservable = PublishSubject.create<String>()
+    private val passwordErrorObservable = PublishSubject.create<String>()
+    private val passwordFocusObservable = PublishSubject.create<Boolean>()
+    private val emailFocusObservable = PublishSubject.create<Boolean>()
+    private val loginObservable = PublishSubject.create<Boolean>()
 
     class Input : LoginViewModel.Input {
 
@@ -31,7 +36,7 @@ object LoginViewModelImpl {
                 logindataManager
                         .login(email, password)
                         .subscribe {
-                            output.loginObservable().onNext(it)
+                            loginObservable.onNext(it)
                             progressViewModel.input.hideProgress()
                         }
             }
@@ -39,15 +44,15 @@ object LoginViewModelImpl {
 
         private fun checkEmailValid(email: String, context: Context): Boolean {
             if (TextUtils.isEmpty(email)) { // 이 메일이 빈값이면
-                output.emailErrorObservable().onNext(context.getString(R.string.error_field_required))
-                output.emailFocusObservable().onNext(true)
+                emailErrorObservable.onNext(context.getString(R.string.error_field_required))
+                emailFocusObservable.onNext(true)
                 return false
             } else if (!isEmailValid(email)) { // 이메일의 형식에 맞는지 확인
-                output.emailErrorObservable().onNext(context.getString(R.string.error_invalid_email))
-                output.emailFocusObservable().onNext(true)
+                emailErrorObservable.onNext(context.getString(R.string.error_invalid_email))
+                emailFocusObservable.onNext(true)
                 return false
             } else {
-                output.emailErrorObservable().onNext(null.toString())
+                emailErrorObservable.onNext(null.toString())
             }
             return true
         }
@@ -56,11 +61,11 @@ object LoginViewModelImpl {
         private fun checkPasswordValid(password: String, context: Context): Boolean {
             if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) { // 패스워드의 형식에 맞지 않으면
                 val errorMessage = context.getString(R.string.error_invalid_password)
-                output.passwordErrorObservable().onNext(errorMessage)
-                output.passwordFocusObservable().onNext(true)
+                passwordErrorObservable.onNext(errorMessage)
+                passwordFocusObservable.onNext(true)
                 return false
             } else {
-                output.passwordErrorObservable().onNext(null.toString())
+                passwordErrorObservable.onNext(null.toString())
             }
             return true
         }
@@ -78,29 +83,24 @@ object LoginViewModelImpl {
     }
 
     class Output : LoginViewModel.Output {
-        private val emailErrorObservable = PublishSubject.create<String>()
-        private val passwordErrorObservable = PublishSubject.create<String>()
-        private val passwordFocusObservable = PublishSubject.create<Boolean>()
-        private val emailFocusObservable = PublishSubject.create<Boolean>()
-        private val loginObservable = PublishSubject.create<Boolean>()
 
-        override fun passwordErrorObservable(): PublishSubject<String> {
+        override fun passwordErrorObservable(): Observable<String> {
             return passwordErrorObservable
         }
 
-        override fun emailErrorObservable(): PublishSubject<String> {
+        override fun emailErrorObservable(): Observable<String> {
             return emailErrorObservable
         }
 
-        override fun passwordFocusObservable(): PublishSubject<Boolean> {
+        override fun passwordFocusObservable(): Observable<Boolean> {
             return passwordFocusObservable
         }
 
-        override fun emailFocusObservable(): PublishSubject<Boolean> {
+        override fun emailFocusObservable(): Observable<Boolean> {
             return emailFocusObservable
         }
 
-        override fun loginObservable(): PublishSubject<Boolean> {
+        override fun loginObservable(): Observable<Boolean> {
             return loginObservable
         }
     }
