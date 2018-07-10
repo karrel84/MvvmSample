@@ -23,7 +23,7 @@ object LoginViewModelImpl : LoginViewModel {
 
     class Input : LoginViewModel.Input {
 
-        private val logindataManager = LoginDataManager()
+        private val loginManager = LoginDataManager()
 
         // 로그인시도
         override fun attemptLogin(context: Context, email: String, password: String) {
@@ -32,14 +32,19 @@ object LoginViewModelImpl : LoginViewModel {
             validSuccess = validSuccess and checkEmailValid(email, context) // 이메일 유효성 검사
 
             if (validSuccess) {
-                progressViewModel.input.showProgress()
-                logindataManager
-                        .login(email, password)
-                        .subscribe {
-                            loginObservable.onNext(it)
-                            progressViewModel.input.hideProgress()
-                        }
+                login(email, password)
             }
+        }
+
+        // 로그인
+        private fun login(email: String, password: String) {
+            progressViewModel.input.showProgress()
+            loginManager
+                    .login(email, password)
+                    .subscribe {
+                        loginObservable.onNext(it)
+                        progressViewModel.input.hideProgress()
+                    }
         }
 
         private fun checkEmailValid(email: String, context: Context): Boolean {
